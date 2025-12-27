@@ -17,7 +17,7 @@ pipeline {
         stage('Build') {
             steps {
                 // Example for Maven build
-                sh 'mvn clean install'
+                bat 'mvn clean install'
                 
                 // Example for Gradle build
                 // sh './gradlew build'
@@ -30,7 +30,7 @@ pipeline {
         stage('Test') {
             steps {
                 // Run tests
-                sh 'mvn test'
+                bat 'mvn test'
             }
         }
     }
