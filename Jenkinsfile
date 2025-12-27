@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+  
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // Example for Maven build
+                sh 'mvn clean install'
+                
+                // Example for Gradle build
+                // sh './gradlew build'
+                
+                // Example for Node.js build
+                // sh 'npm install && npm run build'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // Run tests
+                sh 'mvn test'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build and tests completed successfully!'
+        }
+        failure {
+            echo 'Build failed. Check logs.'
+        }
+    }
+}
