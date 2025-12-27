@@ -24,7 +24,8 @@ pipeline {
         stage('Run Application') {
             steps {
                 // Run the packaged JAR
-                bat 'java -jar target/ProductAppAWS-0.0.1-SNAPSHOT.jar'
+                //bat 'java -jar target/ProductAppAWS-0.0.1-SNAPSHOT.jar'
+                bat 'start java -jar target/ProductAppAWS-0.0.1-SNAPSHOT.jar --server.port=9090'
             }
         }
     }
