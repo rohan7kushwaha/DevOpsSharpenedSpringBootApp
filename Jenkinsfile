@@ -1,43 +1,37 @@
 pipeline {
     agent any
 
-    tools{
+    tools {
         maven 'Maven3'
         jdk 'JDK17'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/rohan7kushwaha/DevOpsSharpenedSpringBootApp',
-                credentialsId: 'GitHub-cred'
+                git branch: 'main',
+                    url: 'https://github.com/rohan7kushwaha/DevOpsSharpenedSpringBootApp',
+                    credentialsId: 'GitHub-cred'
             }
         }
 
         stage('Build') {
             steps {
-                // Example for Maven build
-                bat 'mvn clean install'
-                
-                // Example for Gradle build
-                // sh './gradlew build'
-                
-                // Example for Node.js build
-                // sh 'npm install && npm run build'
+                bat 'mvn clean package'
             }
         }
 
-        stage('Test') {
+        stage('Run Application') {
             steps {
-                // Run tests
-                bat 'mvn test'
+                // Run the packaged JAR
+                bat 'java -jar target/ProductAppAWS-0.0.1-SNAPSHOT.jar'
             }
         }
     }
 
     post {
         success {
-            echo 'Build and tests completed successfully!'
+            echo 'Build and application run completed successfully!'
         }
         failure {
             echo 'Build failed. Check logs.'
