@@ -1,0 +1,6 @@
+[
+  {
+    "name": "springboot-container",
+    "imageUri": "799517508679.dkr.ecr.eu-north-1.amazonaws.com/springboot-app"
+  }
+]
