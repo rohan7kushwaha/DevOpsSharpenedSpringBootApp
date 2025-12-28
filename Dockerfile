@@ -7,6 +7,10 @@ RUN mvn clean package -DskipTests
 # Stage 2: Run JAR
 FROM public.ecr.aws/docker/library/openjdk:17
 WORKDIR /app
-COPY --from=build /app/target/app.jar app.jar
+#Copy the compiled Java application JAR file into the container
+COPY ./target/ProductAppAWS-0.0.1-SNAPSHOT.jar /app
+#Expose the port the Spring Boot application will run on
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar"]
+Command to run the application
+CMD ["java", "-jar", "ProductAppAWS-0.0.1-SNAPSHOT.jar"]
+
