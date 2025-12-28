@@ -1,4 +1,4 @@
-FROM openjdk:17
+FROM public.ecr.aws/docker/library/openjdk:17
 WORKDIR /app
 COPY ./target/app.jar app.jar
 EXPOSE 8080
