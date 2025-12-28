@@ -36,7 +36,7 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess
+        - arn:aws:iam::aws:policy/AmazonECS_FullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
 
   CodeBuildProject:
@@ -125,7 +125,7 @@ Resources:
                 Provider: ECS
                 Version: '1'
               InputArtifacts:
-                - Name: SourceOutput
+                - Name: BuildOutput
               Configuration:
                 ClusterName: !Ref ECSClusterName
                 ServiceName: !Ref ECSServiceName
