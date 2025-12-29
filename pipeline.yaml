@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: CI/CD Pipeline for Spring Boot App using ECS Fargate
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CI/CD Pipeline for ECS Fargate using CodePipeline, CodeBuild and ECR
 
 Parameters:
   GitHubOwner:
@@ -9,13 +9,14 @@ Parameters:
   GitHubBranch:
     Type: String
     Default: main
-  CodeStarConnectionArn:
+  GitHubTokenSecretArn:
     Type: String
-  ECRRepositoryName:
-    Type: String
+    Description: ARN of the Secrets Manager secret storing GitHub OAuth token
   ECSClusterName:
     Type: String
   ECSServiceName:
+    Type: String
+  ECRRepositoryName:
     Type: String
 
 Resources:
@@ -27,8 +28,9 @@ Resources:
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: codebuild-service-role
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -36,8 +38,8 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
-        - arn:aws:iam::aws:policy/AmazonECS_FullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
@@ -54,7 +56,7 @@ Resources:
         EnvironmentVariables:
           - Name: AWS_REGION
             Value: !Ref AWS::Region
-          - Name: REPOSITORY_NAME
+          - Name: ECR_REPO
             Value: !Ref ECRRepositoryName
       Source:
         Type: CODEPIPELINE
@@ -63,8 +65,9 @@ Resources:
   CodePipelineRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: codepipeline-service-role
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -73,8 +76,17 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
         - arn:aws:iam::aws:policy/AmazonECS_FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+      Policies:
+        - PolicyName: AllowSecretsManagerAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref GitHubTokenSecretArn
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -86,28 +98,29 @@ Resources:
       Stages:
         - Name: Source
           Actions:
-            - Name: Source
+            - Name: GitHub_Source
               ActionTypeId:
                 Category: Source
-                Owner: AWS
-                Provider: CodeStarSourceConnection
-                Version: '1'
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: "1"
               OutputArtifacts:
                 - Name: SourceOutput
               Configuration:
-                ConnectionArn: !Ref CodeStarConnectionArn
-                FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
-                BranchName: !Ref GitHubBranch
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Sub "{{resolve:secretsmanager:${GitHubTokenSecretArn}:SecretString:token}}"
               RunOrder: 1
 
         - Name: Build
           Actions:
-            - Name: Build
+            - Name: DockerBuild
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Provider: CodeBuild
-                Version: '1'
+                Version: "1"
               InputArtifacts:
                 - Name: SourceOutput
               OutputArtifacts:
@@ -123,9 +136,9 @@ Resources:
                 Category: Deploy
                 Owner: AWS
                 Provider: ECS
-                Version: '1'
+                Version: "1"
               InputArtifacts:
-                - Name: BuildOutput
+                - Name: SourceOutput
               Configuration:
                 ClusterName: !Ref ECSClusterName
                 ServiceName: !Ref ECSServiceName
@@ -134,4 +147,5 @@ Resources:
 
 Outputs:
   PipelineName:
+    Description: CodePipeline Name
     Value: !Ref Pipeline
